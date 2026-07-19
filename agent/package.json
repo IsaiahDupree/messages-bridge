@@ -1,0 +1,42 @@
+{
+  "name": "apple-messages-agent",
+  "version": "1.0.0",
+  "description": "Local agent for the Messages Bridge MCP connector — lets ChatGPT work with your iMessage & Contacts via your own Mac.",
+  "type": "module",
+  "bin": {
+    "apple-messages-agent": "./cli.mjs"
+  },
+  "files": [
+    "cli.mjs",
+    "messages-jxa.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "imessage",
+    "messages",
+    "contacts",
+    "mcp",
+    "chatgpt",
+    "claude",
+    "macos",
+    "jxa",
+    "osascript",
+    "messagesbridge",
+    "automation",
+    "agent",
+    "launchagent"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IsaiahDupree/messages-bridge",
+    "directory": "agent"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test-agent-unit.mjs"
+  }
+}
