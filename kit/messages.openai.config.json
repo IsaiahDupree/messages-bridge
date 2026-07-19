@@ -15,7 +15,7 @@
     "supportUrl": "https://messagesbridge.vercel.app/support",
     "privacyUrl": "https://messagesbridge.vercel.app/privacy",
     "termsUrl": "https://messagesbridge.vercel.app/terms",
-    "demoRecordingUrl": "PENDING — record a demo of MessagesBridge in ChatGPT (demo account, fictional threads) and upload Unlisted to YouTube, then paste the URL here.",
+    "demoRecordingUrl": "https://youtu.be/j-zkJwi1ajk",
     "demoRecordingNote": "REQUIRED by OpenAI. A recorded demo hosted on YouTube (Unlisted is fine). Record with the ChatGPT sidebar collapsed so no private chat/project names appear.",
     "directoryIcon": "../assets/icon-512.png",
     "composerIcon": "../assets/icon-512.png",

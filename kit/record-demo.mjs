@@ -27,6 +27,7 @@ const PROMPTS = [
   'Using MessagesBridge, search my messages for dinner',
   "Using MessagesBridge, what's Marcus Reed's phone number?",
   "Using MessagesBridge, text +15550142 that I'm running 10 minutes late",
+  "send it",
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -169,7 +170,16 @@ async function main() {
 
   await sleep(1200); // a beat of the empty composer at the start
   for (const p of PROMPTS) await sendPrompt(page, p);
-  await sleep(2500); // hold on the final reply
+
+  // The send triggers ChatGPT's native write-approval card ("Allow ChatGPT to use
+  // MessagesBridge?"). Click "Allow once" so the demo shows the send completing.
+  for (let i = 0; i < 10; i++) {
+    const hit = await clickIfPresent(page, ['Allow once', 'Always allow', 'Allow', 'Confirm', 'Approve']);
+    if (hit) { log(`write-approval: clicked "${hit}"`); break; }
+    await sleep(1200);
+  }
+  await waitDoneStreaming(page);
+  await sleep(4000); // hold on the "sent" confirmation
 
   running = false;
   await loop;
