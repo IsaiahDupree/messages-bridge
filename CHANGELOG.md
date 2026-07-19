@@ -1,16 +1,18 @@
 # Changelog
 
-All notable changes to RemindersBridge. Versions cover the server (relay) and the
-`apple-reminders-agent` npm package together.
+All notable changes to MessagesBridge. Versions cover the server (relay) and the
+`apple-messages-agent` npm package together.
 
 ## [Unreleased]
 
 ### Changed
-- **Forked from NotesBridge into RemindersBridge** — the Apple **Reminders**
+- **Forked from RemindersBridge into MessagesBridge** — the **iMessage + Contacts**
   connector. Same architecture (local Mac agent + passthrough relay, OAuth 2.1
-  with PKCE + DCR); the agent now drives the Reminders app and serves eight tools:
-  `search`, `fetch`, `list_lists`, `list_reminders`, `get_reminder`,
-  `create_reminder`, `complete_reminder`, and `update_reminder`.
+  with PKCE + DCR); the agent now drives Messages and Contacts and serves seven
+  tools: `search_messages`, `list_recent_threads`, `get_thread`, `send_message`,
+  `search_contacts`, `get_contact`, and `create_contact`. Reads pull from the
+  Messages database (`~/Library/Messages/chat.db`, `sqlite3` read-only); sends go
+  through AppleScript; Contacts are read/created via JXA.
 
 ## [1.3.0] — 2026-07-17
 
@@ -31,13 +33,13 @@ All notable changes to RemindersBridge. Versions cover the server (relay) and th
 - **Push-based relay (long-poll).** The agent holds a connection open and the
   server returns the instant a job is enqueued — relay overhead dropped from
   ~950 ms to ~300 ms. Backward-compatible with older agents.
-- **Reminder read tools.** `search`, `fetch`, `list_lists`, `list_reminders`, and
-  `get_reminder` return structured reminder data (lists, due dates, completion
-  status, priority) to ChatGPT.
+- **Message + contact read tools.** `search_messages`, `list_recent_threads`,
+  `get_thread`, `search_contacts`, and `get_contact` return structured data
+  (conversations/threads, messages, and contact name/phones/emails) to ChatGPT.
 - **Email verification** via Resend (soft by default; opt-in enforcement via
   `REQUIRE_EMAIL_VERIFICATION`). `/verify`, `/api/resend-verification`, `/api/me`.
 - Reviewer **demo mode** — the `reviewer@…` account exercises all tools against
-  server-side sample reminders with no Mac agent.
+  server-side fictional conversations with no Mac agent.
 - **Rate limiting** on all auth/OAuth endpoints. Privacy & support pages.
 - macOS **LaunchAgent** auto-start (`install`/`uninstall`/`logs`) so the agent
   survives login/restart and crashes.
@@ -62,6 +64,6 @@ All notable changes to RemindersBridge. Versions cover the server (relay) and th
 
 ### Added
 - Initial release: OAuth 2.1 + PKCE + DCR, streamable-HTTP MCP endpoint, job
-  relay, and the `apple-reminders-agent` Mac CLI (JXA against Apple Reminders).
+  relay, and the `apple-messages-agent` Mac CLI (iMessage + Contacts automation).
 
-Releases: https://github.com/IsaiahDupree/reminders-bridge/releases
+Releases: https://github.com/IsaiahDupree/messages-bridge/releases

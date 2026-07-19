@@ -11,11 +11,11 @@ import path from 'node:path';
 import puppeteer from 'puppeteer-core';
 
 const CDP = 'http://127.0.0.1:9222';
-const VIDEO = process.env.VIDEO || '/Users/isaiahdupree/Desktop/remindersbridge-demo.mp4';
+const VIDEO = process.env.VIDEO || '/Users/isaiahdupree/Desktop/messagesbridge-demo.mp4';
 const SHOTS = path.join(process.cwd(), 'screenshots');
-const TITLE = process.env.TITLE || 'RemindersBridge — Apple Reminders in ChatGPT (demo)';
+const TITLE = process.env.TITLE || 'MessagesBridge — Apple Reminders in ChatGPT (demo)';
 const DESC = process.env.DESC ||
-  'A short demo of the RemindersBridge MCP connector inside ChatGPT: listing reminder lists, seeing what\'s due, searching, and creating a reminder — run against a demo account (no Mac needed). https://remindersbridge.vercel.app · https://github.com/IsaiahDupree/reminders-bridge';
+  'A short demo of the MessagesBridge MCP connector inside ChatGPT: listing reminder lists, seeing what\'s due, searching, and creating a reminder — run against a demo account (no Mac needed). https://messagesbridge.vercel.app · https://github.com/IsaiahDupree/reminders-bridge';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (m) => console.log(`[yt2 ${new Date().toTimeString().slice(0, 8)}] ${m}`);

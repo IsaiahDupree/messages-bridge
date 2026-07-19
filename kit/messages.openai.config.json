@@ -1,0 +1,54 @@
+{
+  "$comment": "MessagesBridge listing for the OpenAI plugin directory (7-section form). Same schema as reminders.openai.config.json. Secrets (reviewer demo password) are NOT stored here; read from ../.env.local by env var name. This is a REVIEW-SENSITIVE surface (messaging) — the test cases lead with read-only calls and a single confirmed send. PENDING before submit: hosted demo VIDEO (info.demoRecordingUrl) + the domain-verification token (set OPENAI_APPS_CHALLENGE on Vercel when the MCP section issues it).",
+  "mcpUrl": "https://messagesbridge.vercel.app/mcp",
+  "authentication": "OAuth",
+  "info": {
+    "name": "MessagesBridge",
+    "subtitle": "Your iMessage & Contacts",
+    "subtitleNote": "Subtitle MUST be 30 characters or fewer (OpenAI validates). This is 24 (well under the 30 limit).",
+    "description": "MessagesBridge connects ChatGPT to your iMessage and Contacts. Catch up on a conversation, find what someone said weeks ago, fire off a quick reply, or pull up a contact's number — all from chat. Your messages never live on our servers: every action runs on your own Mac through a small open-source agent you install with one command (npx apple-messages-agent), and the relay only carries each request for the seconds it's in flight. Read-first by design — and every message you send is confirmed by you in ChatGPT before it goes out, one recipient at a time, never in bulk. Open source (MIT) and self-hostable.",
+    "category": "Communication",
+    "developerIdentity": "Dupree Ops",
+    "developerIdentityNote": "Substring matched against the verified identity (Dupree Ops LLC). Identity verification already completed for prior submissions.",
+    "pluginAuthor": "Isaiah Dupree",
+    "websiteUrl": "https://messagesbridge.vercel.app",
+    "supportUrl": "https://messagesbridge.vercel.app/support",
+    "privacyUrl": "https://messagesbridge.vercel.app/privacy",
+    "termsUrl": "https://messagesbridge.vercel.app/terms",
+    "demoRecordingUrl": "PENDING — record a demo of MessagesBridge in ChatGPT (demo account, fictional threads) and upload Unlisted to YouTube, then paste the URL here.",
+    "demoRecordingNote": "REQUIRED by OpenAI. A recorded demo hosted on YouTube (Unlisted is fine). Record with the ChatGPT sidebar collapsed so no private chat/project names appear.",
+    "directoryIcon": "../assets/icon-512.png",
+    "composerIcon": "../assets/icon-512.png",
+    "commerceLinksOutForPurchases": false
+  },
+  "domainVerification": {
+    "note": "The MCP section issues a token to serve at /.well-known/openai-apps-challenge on the MCP hostname. server/api/challenge.js serves it from the OPENAI_APPS_CHALLENGE env var. Set it on Vercel, redeploy, then click Verify Domain. The token is a PUBLIC value.",
+    "wellKnownPath": "/.well-known/openai-apps-challenge"
+  },
+  "reviewerDemo": {
+    "note": "Reviewers test 24/7 with no Mac and no real messages. The demo account authenticates on the OAuth consent page with email + password; the password lives in ../.env.local. It serves FICTIONAL sample conversations (Sarah Chen, Mom, a Q3 Launch group) and contacts — no real message is ever read or sent. Enter the same values in the Testing section's Test credentials box.",
+    "email": "reviewer@messagesbridge.demo",
+    "passwordEnvVar": "DEMO_PASSWORD"
+  },
+  "prompts": [
+    "What are my recent conversations?",
+    "Search my messages for dinner",
+    "Text +15550142 that I'm running 10 minutes late"
+  ],
+  "promptsNote": "Up to 3 showcase prompts. They render as @Plugin chat bubbles.",
+  "testCases": [
+    { "scenario": "List recent conversations", "prompt": "What are my most recent conversations?", "tools": "list_recent_threads", "expected": "Returns the demo account's recent threads newest-first with a last-message preview: Mom, the Sarah Chen thread about Friday dinner, and the 'Q3 Launch' group chat." },
+    { "scenario": "Search messages by keyword", "prompt": "Search my messages for dinner", "tools": "search_messages", "expected": "Finds the Sarah Chen conversation — messages about a Friday dinner reservation. Read-only; nothing is sent or changed." },
+    { "scenario": "Read a conversation", "prompt": "What did Sarah last say to me?", "tools": "search_contacts, get_thread", "expected": "Resolves Sarah Chen, then get_thread returns her conversation in order, ending with 'Perfect. I made a reservation for two.'" },
+    { "scenario": "Look up a contact", "prompt": "What's Marcus's phone number?", "tools": "search_contacts", "expected": "Returns contact Marcus Reed with phone +15550199 and email marcus@acme.example. Read-only." },
+    { "scenario": "Send a message (write, confirmed)", "prompt": "Text +15550142 that I'm running 10 minutes late", "tools": "send_message", "expected": "ChatGPT confirms the recipient (+15550142) and exact text with the user first, then send_message returns sent: true. One recipient only." }
+  ],
+  "testCasesNote": "Testing section requires EXACTLY 5 positive test cases; run against the reviewer demo account's fictional data. Four are read-only; the one write (send_message) is confirmed before it runs and targets a single fictional number.",
+  "negativeTestCases": [
+    { "scenario": "A general question about texting etiquette in the abstract — not a request to read or send the user's own messages. There is nothing to look up or send, so MessagesBridge should not trigger.", "prompt": "What's a polite way to text someone that I can't make it?" },
+    { "scenario": "The user names a different, non-Apple messaging app. MessagesBridge only works with Apple Messages / iMessage and should not trigger for WhatsApp, Telegram, Slack, or SMS via another app.", "prompt": "Send this to the group on WhatsApp." },
+    { "scenario": "An email action, not a message. MessagesBridge sends iMessages only; it should not trigger to compose or send email.", "prompt": "Email the team the agenda for tomorrow." }
+  ],
+  "negativeTestCasesNote": "Testing section requires EXACTLY 3 negative test cases (prompts where the app should NOT trigger).",
+  "releaseNotes": "Initial release. MessagesBridge connects ChatGPT to your iMessage and Contacts through a small open-source agent that runs on your own Mac — catch up on conversations, search your history, look up contacts, and send a quick reply. Read-first by design; every send is confirmed by you before it happens, one recipient at a time, never in bulk. Your messages never live on our servers; the cloud piece is a stateless relay. Open source (MIT) and self-hostable."
+}

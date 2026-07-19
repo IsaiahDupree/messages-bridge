@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// record-demo.mjs — records a demo of RemindersBridge working in ChatGPT.
+// record-demo.mjs — records a demo of MessagesBridge working in ChatGPT.
 // Connects to the agent Chrome (CDP :9222), opens a fresh chat, runs a scripted
 // arc of prompts against the connector, screenshot-loops the page, and encodes
 // the frames to an mp4 with ffmpeg. The connector must already be registered +
@@ -7,7 +7,7 @@
 //
 //   node record-demo.mjs
 //
-// Output: $OUT (default ./remindersbridge-demo.mp4)
+// Output: $OUT (default ./messagesbridge-demo.mp4)
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,17 +16,17 @@ import puppeteer from 'puppeteer-core';
 
 const CDP = 'http://127.0.0.1:9222';
 const FRAME_DIR = process.env.FRAME_DIR || '/Users/isaiahdupree/.claude/jobs/c76af6d7/tmp/frames';
-const OUT = process.env.OUT || path.join(process.cwd(), 'remindersbridge-demo.mp4');
+const OUT = process.env.OUT || path.join(process.cwd(), 'messagesbridge-demo.mp4');
 const FPS = 4;                    // capture + playback rate (real-time)
 const INTERVAL = Math.round(1000 / FPS);
 
 // The demo arc. Each names the connector so the tool call routes reliably
 // (reviewers can attach it via the + menu instead). Reads first, then one write.
 const PROMPTS = [
-  'Using RemindersBridge, what reminder lists do I have?',
-  "Using RemindersBridge, what do I have coming up? Show me what's due soonest.",
-  'Using RemindersBridge, search my reminders for the dentist.',
-  "Using RemindersBridge, add 'Pick up dry cleaning' to my Work list.",
+  'Using MessagesBridge, what are my recent conversations?',
+  'Using MessagesBridge, search my messages for dinner',
+  "Using MessagesBridge, what's Marcus Reed's phone number?",
+  "Using MessagesBridge, text +15550142 that I'm running 10 minutes late",
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

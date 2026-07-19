@@ -1,34 +1,35 @@
 # Security Policy
 
-Thanks for helping keep RemindersBridge and its users safe.
+Thanks for helping keep MessagesBridge and its users safe.
 
 ## Reporting a vulnerability
 
 Please report security issues **privately** — do not open a public issue.
 
-- Email **isaiahdupree33@gmail.com** with subject `RemindersBridge security: <short summary>`, or
-- Use GitHub's [private vulnerability reporting](https://github.com/IsaiahDupree/reminders-bridge/security/advisories/new).
+- Email **isaiahdupree33@gmail.com** with subject `MessagesBridge security: <short summary>`, or
+- Use GitHub's [private vulnerability reporting](https://github.com/IsaiahDupree/messages-bridge/security/advisories/new).
 
 Include: affected component, a clear description, reproduction steps / PoC, and the impact you believe it has. We aim to acknowledge within 3 business days and to keep you updated through remediation. Please give us reasonable time to fix before any public disclosure. There is no paid bounty, but we're glad to credit reporters in the changelog.
 
 ## Scope
 
 **In scope**
-- The hosted relay: `https://remindersbridge.vercel.app` (OAuth, token, MCP, agent, and pair endpoints).
-- This repository's code: `server/`, `agent/` (the `apple-reminders-agent` npm package), `kit/`.
+- The hosted relay: `https://messagesbridge.vercel.app` (OAuth, token, MCP, agent, and pair endpoints).
+- This repository's code: `server/`, `agent/` (the `apple-messages-agent` npm package), `kit/`.
 
 **Out of scope**
 - Denial-of-service / volumetric attacks (the endpoints are rate-limited; please don't stress-test production).
 - Findings that require a compromised Mac, a malicious local user, or physical access to the user's machine.
 - Social engineering, spam, or issues in third-party infrastructure we don't control (Vercel, Supabase, Resend, OpenAI).
-- Self-XSS or issues only exploitable against your own account/reminders.
+- Self-XSS or issues only exploitable against your own account/conversations.
 
 ## Design details relevant to security
 
-- **Your reminders stay on your Mac.** The relay only carries a job for the seconds it is in flight; job payloads live in Redis-shaped storage with a short TTL and are deleted on delivery. The relay never persists reminder content.
+- **Your messages stay on your Mac.** The relay only carries a job for the seconds it is in flight; job payloads live in Redis-shaped storage with a short TTL and are deleted on delivery. The relay never persists message content — message history is read from the Mac's local database (`~/Library/Messages/chat.db`) only when a request needs it.
+- **Messaging safety.** The connector is **read-first**: read tools never change anything on your Mac. Every `send_message` call is confirmed in ChatGPT before it goes out, and a send targets **one recipient per call** — there is no bulk-send path. The reviewer demo account only ever operates on fictional conversations.
 - **Token model.** JWTs are HMAC-SHA256 signed with a server-only `JWT_SECRET`. Three distinct kinds — `session` (dashboard), `agent` (a paired Mac), `mcp` (ChatGPT's access token) — and each protected endpoint checks the required kind. Agent job/result endpoints only accept `agent` tokens.
 - **OAuth.** Authorization Code + PKCE (S256 required) with Dynamic Client Registration (RFC 7591). Authorization codes are single-use; `redirect_uri` must match a value the client registered.
-- **Isolation.** Jobs are keyed per user (`jobs:<userId>`); a paired agent only ever receives jobs for its own account. The reviewer demo account operates on isolated server-side sample reminders.
+- **Isolation.** Jobs are keyed per user (`jobs:<userId>`); a paired agent only ever receives jobs for its own account. The reviewer demo account operates on isolated server-side fictional conversations.
 - **Secrets** are never committed; configuration lives in environment variables (see `server/.env.example`).
 
 ## Known limitations / accepted residual risk

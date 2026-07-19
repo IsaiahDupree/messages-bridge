@@ -1,14 +1,14 @@
-# Contributing to RemindersBridge
+# Contributing to MessagesBridge
 
-Thanks for your interest! RemindersBridge is three small pieces — the Vercel relay
-(`server/`), the `apple-reminders-agent` CLI (`agent/`), and the connector kit
+Thanks for your interest! MessagesBridge is three small pieces — the Vercel relay
+(`server/`), the `apple-messages-agent` CLI (`agent/`), and the connector kit
 (`kit/`). Contributions of any size are welcome.
 
 ## Getting set up
 
 ```bash
-git clone https://github.com/IsaiahDupree/reminders-bridge
-cd reminders-bridge
+git clone https://github.com/IsaiahDupree/messages-bridge
+cd messages-bridge
 
 # server (relay)
 cd server && cp .env.example .env.local   # fill in Supabase + JWT_SECRET
