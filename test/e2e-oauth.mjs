@@ -106,7 +106,7 @@ ok('MCP initialize', init.body.result?.serverInfo?.name === 'apple-messages-rela
 
 const tools = await mcp({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
 const names = (tools.body.result?.tools || []).map((t) => t.name).sort();
-ok('MCP lists all 7 tools', JSON.stringify(names) === JSON.stringify(['create_contact', 'get_contact', 'get_thread', 'list_recent_threads', 'search_contacts', 'search_messages', 'send_message']), names.join(','));
+ok('MCP lists all 8 tools', JSON.stringify(names) === JSON.stringify(['create_contact', 'get_contact', 'get_thread', 'list_recent_threads', 'messages_status', 'search_contacts', 'search_messages', 'send_message']), names.join(','));
 
 // 9. relay path: agent offline error proves the queue lookup ran end to end
 const call = await mcp({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'list_recent_threads', arguments: {} } });

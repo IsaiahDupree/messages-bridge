@@ -22,7 +22,7 @@ const asError = (err) => ({
 const RO = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 
 export function buildServer(userId, { demo = false } = {}) {
-  const server = new McpServer({ name: 'apple-messages-relay', version: '1.0.0' });
+  const server = new McpServer({ name: 'apple-messages-relay', version: '1.4.0' });
 
   // Demo accounts run against server-side fictional threads/contacts (no Mac
   // agent, no real messages); real accounts relay to the user's paired Mac.
@@ -39,8 +39,8 @@ export function buildServer(userId, { demo = false } = {}) {
     'search_messages',
     {
       title: 'Search messages',
-      description: "Search the text of the user's iMessage / SMS history by keyword. Returns matching messages with sender, date, and the thread they belong to.",
-      inputSchema: { query: z.string(), limit: z.number().int().min(1).max(100).optional() },
+      description: "Search the text of the user's iMessage / SMS history by keyword. Searches plain and attributed text on this Mac. Follow next_cursor until null, including pages with no matches. Returns sender, date and thread; does not prove complete iPhone sync.",
+      inputSchema: { query: z.string(), limit: z.number().int().min(1).max(100).optional(), cursor: z.string().regex(/^[1-9][0-9]*$/).optional() },
       annotations: RO,
     },
     forward('search_messages')
@@ -50,8 +50,8 @@ export function buildServer(userId, { demo = false } = {}) {
     'list_recent_threads',
     {
       title: 'List recent conversations',
-      description: "List the user's most recent Messages conversations (people and group chats), newest first, each with a preview of the last message.",
-      inputSchema: { limit: z.number().int().min(1).max(100).optional() },
+      description: "List the user's most recent Messages conversations (people and group chats), newest first, each with a preview of the last message. Pass next_cursor as cursor for older conversations.",
+      inputSchema: { limit: z.number().int().min(1).max(100).optional(), cursor: z.string().regex(/^[1-9][0-9]*$/).optional() },
       annotations: RO,
     },
     forward('list_recent_threads')
@@ -61,8 +61,8 @@ export function buildServer(userId, { demo = false } = {}) {
     'get_thread',
     {
       title: 'Read a conversation',
-      description: 'Read the recent messages in one conversation, in chronological order. Identify the thread by a phone number, email, or chat identifier (from search or list results).',
-      inputSchema: { thread: z.string(), limit: z.number().int().min(1).max(200).optional() },
+      description: 'Read one page of messages in a conversation, oldest database record first within the page. Pass next_cursor as cursor to read older history until null. Includes attributed text and attachment indicators, not attachment contents. Identify the thread by a phone number, email, or chat identifier (from search or list results).',
+      inputSchema: { thread: z.string(), limit: z.number().int().min(1).max(200).optional(), cursor: z.string().regex(/^[1-9][0-9]*$/).optional() },
       annotations: RO,
     },
     forward('get_thread')
@@ -117,6 +117,8 @@ export function buildServer(userId, { demo = false } = {}) {
     },
     forward('create_contact')
   );
+
+  server.registerTool('messages_status', {title:'Messages access status',description:'Check local Messages database access, message counts and sync coverage limitations without returning message content.',inputSchema:{},annotations:RO},forward('messages_status'));
 
   return server;
 }

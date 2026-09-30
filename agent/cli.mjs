@@ -79,7 +79,7 @@ async function api(server, path, { method = 'GET', token, body, signal } = {}) {
       ...(body ? { 'content-type': 'application/json' } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
-    signal,
+    signal: signal || AbortSignal.timeout(15_000),
   });
 }
 
@@ -270,7 +270,7 @@ async function cmdRun(serverFlag) {
         log(`job ${job.jobId}: skipped — stale (queued ${ageS}s ago, caller gave up)`);
         continue;
       }
-      log(`job ${job.jobId}: ${job.tool} ${JSON.stringify(job.args ?? {}).slice(0, 200)}`);
+      log(`job ${job.jobId}: ${job.tool}`);
       let payload;
       try {
         payload = { jobId: job.jobId, ok: true, result: await runTool(job.tool, job.args ?? {}) };
@@ -437,6 +437,7 @@ Commands:
   install       Install a macOS LaunchAgent so the agent starts on login and restarts on crash.
   uninstall     Stop and remove the LaunchAgent.
   logs          Show the last ~50 lines of the background agent log.
+  doctor        Check local Messages access and history coverage (no content printed).
   status        Check config and server reachability (does not consume jobs).
 
 Options:
@@ -459,6 +460,9 @@ async function main() {
       break;
     case 'run':
       await cmdRun(server);
+      break;
+    case 'doctor':
+      console.log(JSON.stringify(await runTool('messages_status'), null, 2));
       break;
     case 'status':
       await cmdStatus(server);

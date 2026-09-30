@@ -1,8 +1,8 @@
 // redis.js — Redis-shaped storage on Supabase Postgres (shared ecosystem project),
 // with an in-memory fallback for local dev/tests. Only the small command surface
 // the app needs: get/set/del/lpush/rpop/expire. Queue semantics are FIFO
-// (lpush + rpop), implemented by the shared nb_* storage RPC functions (all
-// MessagesBridge keys are namespaced by prefix so they never collide).
+// (lpush + rpop), implemented by the isolated mb_* storage RPC functions and actp_messagesbridge_* tables.
+// Other bridge apps cannot collide with these keys.
 
 const SUPA_URL = process.env.SUPABASE_URL;
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -18,8 +18,9 @@ async function rpc(fn, args) {
       authorization: `Bearer ${SUPA_KEY}`,
     },
     body: JSON.stringify(args),
+    signal: AbortSignal.timeout(10_000),
   });
-  if (!r.ok) throw new Error(`storage ${fn} failed: ${r.status} ${await r.text()}`);
+  if (!r.ok) throw new Error(`Storage unavailable (${fn}, HTTP ${r.status}). Check the MessagesBridge storage migration and server credentials.`);
   const text = await r.text();
   return text && text !== 'null' ? JSON.parse(text) : null;
 }
@@ -28,13 +29,13 @@ const asString = (v) => (typeof v === 'string' ? v : JSON.stringify(v));
 
 function supabase() {
   return {
-    get: (k) => rpc('nb_get', { p_k: k }),
-    set: (k, v, ttlSec) => rpc('nb_set', { p_k: k, p_v: asString(v), p_ttl_sec: ttlSec ?? null }),
-    del: (k) => rpc('nb_del', { p_k: k }),
-    lpush: (k, v) => rpc('nb_lpush', { p_k: k, p_v: asString(v) }),
-    rpop: (k) => rpc('nb_rpop', { p_k: k }),
-    expire: (k, ttlSec) => rpc('nb_expire', { p_k: k, p_ttl_sec: ttlSec }),
-    incr: (k, ttlSec) => rpc('nb_incr', { p_k: k, p_ttl_sec: ttlSec ?? null }),
+    get: (k) => rpc('mb_get', { p_k: k }),
+    set: (k, v, ttlSec) => rpc('mb_set', { p_k: k, p_v: asString(v), p_ttl_sec: ttlSec ?? null }),
+    del: (k) => rpc('mb_del', { p_k: k }),
+    lpush: (k, v) => rpc('mb_lpush', { p_k: k, p_v: asString(v) }),
+    rpop: (k) => rpc('mb_rpop', { p_k: k }),
+    expire: (k, ttlSec) => rpc('mb_expire', { p_k: k, p_ttl_sec: ttlSec }),
+    incr: (k, ttlSec) => rpc('mb_incr', { p_k: k, p_ttl_sec: ttlSec ?? null }),
   };
 }
 
@@ -96,4 +97,5 @@ function memory() {
 const g = globalThis;
 if (!g.__memRedis) g.__memRedis = memory();
 
+if (!redisConfigured && process.env.NODE_ENV === 'production') throw new Error('MessagesBridge storage must be configured in production');
 export const redis = redisConfigured ? supabase() : g.__memRedis;

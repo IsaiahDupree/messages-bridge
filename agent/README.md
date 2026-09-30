@@ -6,7 +6,7 @@ MessagesBridge relay, and does the actual talking to Messages and Contacts (via 
 automation). Your message content never leaves your machine except for the specific request
 you make.
 
-- No account, no password, no cloud copy of your messages.
+- Pair with your own MessagesBridge account; requested results travel through the relay to ChatGPT.
 - One command to pair, one command to keep it running forever.
 - No dependencies — just Node 18+.
 
@@ -36,7 +36,7 @@ one-time grants:
    history lives in a protected SQLite database (`~/Library/Messages/chat.db`), and macOS
    only lets an app read it if it has Full Disk Access. Grant it under
    **System Settings → Privacy & Security → Full Disk Access** and add your terminal
-   (and/or `node`). Without this, the read tools return nothing.
+   (and/or `node`). Without this, the read tools report a permission error.
 2. **Automation** — so the agent can **send** messages and **read/create** Contacts. The
    first time the agent touches Messages or Contacts, macOS shows a one-time prompt asking
    to allow automation of "Messages" and "Contacts". Click **OK**. If you miss it, enable
@@ -93,9 +93,9 @@ back. Reads of your message history query the Messages database
 (`~/Library/Messages/chat.db`) directly with `sqlite3` in **read-only** mode. Sending a
 message is done through Apple's AppleScript automation of the Messages app. Contacts are
 read and created through Apple's JavaScript automation (JXA / `osascript -l JavaScript`).
-When there's nothing to do it just idles. It serves seven tools — `search_messages`,
+When there's nothing to do it just idles. It serves eight tools — `search_messages`,
 `list_recent_threads`, `get_thread`, `send_message`, `search_contacts`, `get_contact`,
-and `create_contact` — which operate on your conversations, messages, and contacts.
+`create_contact`, and `messages_status` — which operate on your conversations, messages, and contacts.
 
 - Config/token: `~/.messagesbridge-agent.json` (permissions `600`).
 - Background logs: `~/Library/Logs/messagesbridge-agent.log` and `messagesbridge-agent.err.log`.
@@ -152,8 +152,12 @@ automation itself requires macOS.
 
 The agent only contacts the relay server you paired with. It sends the result of the
 specific messages or contacts operation you (via ChatGPT/Claude) requested — nothing else.
-Your conversations are not uploaded or indexed anywhere; message content stays on your Mac.
+Your conversations are not uploaded or indexed anywhere; only the requested results are transmitted through the relay to ChatGPT.
 
 ## License
 
 MIT © Isaiah Dupree
+
+## Agent 1.1
+
+`apple-messages-agent doctor` reports local database access and counts without message text. Reads include Apple attributed text, live WAL changes and cursor pagination. Continue `next_cursor` until null; search can return an empty page with a continuation cursor. Coverage is limited to messages synced to this Mac. Attachment contents are not returned.

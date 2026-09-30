@@ -9,14 +9,14 @@
 
 </div>
 
-MessagesBridge is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) connector that lets ChatGPT work with your **iMessage conversations and Contacts**. It never uploads your messages to a third party — every action runs on **your own Mac** through a tiny local agent. The cloud piece is only a stateless relay that shuttles requests between ChatGPT and your Mac.
+MessagesBridge is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) connector that lets ChatGPT work with your **iMessage conversations and Contacts**. Reads execute on **your own Mac** through a small local agent. Requested results pass through the hosted relay and are returned to ChatGPT. The relay temporarily stores request/result payloads in its queue; it does not maintain a permanent copy of your message history.
 
 ```
   ChatGPT  ──OAuth──►  MessagesBridge relay  ──job queue──►  apple-messages-agent  ──►  Messages.app + Contacts
  (connector)          (Vercel, stateless)      (your Mac, polls & executes)        (on your Mac)
 ```
 
-Your Mac is the only place your messages are ever read or contacts written. The relay stores only short-lived job payloads and your account record; it never sees a message unless a job is in flight, and jobs expire in seconds.
+Your Mac is the only place your messages are ever read or contacts written. The relay stores only short-lived job payloads and your account record; it never sees a message unless a job is in flight, and queue payloads have short expiry windows.
 
 ---
 
@@ -53,9 +53,10 @@ npx apple-messages-agent uninstall   # stop auto-start
 
 | Tool | Action |
 |------|--------|
-| `search_messages` | Search your iMessage/SMS history by keyword |
+| `search_messages` | Search plain and Apple attributed text; follow `next_cursor` even on empty result pages |
 | `list_recent_threads` | List recent conversations, newest first, with a last-message preview |
-| `get_thread` | Read one conversation in order (by phone, email, or chat id) |
+| `get_thread` | Read pages of one conversation using an exact chat id; pass `next_cursor` as `cursor` until null |
+| `messages_status` | Check local access, counts and coverage without returning message content |
 | `send_message` | Send an iMessage to one recipient (you confirm first — no bulk) |
 | `search_contacts` | Find people by name (returns their phones + emails) |
 | `get_contact` | Read one contact by name or id |
@@ -71,7 +72,7 @@ You can run your own relay so nothing depends on the hosted instance.
 
 **Prereqs:** a [Vercel](https://vercel.com) account and a [Supabase](https://supabase.com) project (free tiers are fine).
 
-1. **Storage** — in your Supabase project's SQL editor, run [`supabase/schema.sql`](./supabase/schema.sql). It creates a tiny Redis-shaped KV + queue surface (`nb_*` functions) with RLS on.
+1. **Storage** — in your Supabase project's SQL editor, run [`supabase/schema.sql`](./supabase/schema.sql). It creates isolated `actp_messagesbridge_*` tables and `mb_*` storage functions with RLS and service-role-only grants.
 2. **Deploy** the `server/` directory to Vercel.
 3. **Set env vars** (see [`server/.env.example`](./server/.env.example)):
    - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — your project + service-role key
@@ -111,7 +112,7 @@ node --test agent/test-agent-unit.mjs
 
 ## Security & privacy
 
-- Messages are read and sent, and contacts read and added, **only on your Mac**. The relay never persists message content — job payloads live in Redis-shaped storage with a short TTL and are deleted on delivery.
+- Messages are read and sent, and contacts read and added, **only on your Mac**. The relay temporarily persists requested content in its job/result queues with short TTLs; results are consumed on delivery.
 - The agent token is stored at `~/.messagesbridge-agent.json` (mode `600`).
 - No secrets are committed; see [`.gitignore`](./.gitignore) and the `.env.example` files.
 - Write tools are marked destructive so ChatGPT asks before it sends a message or adds a contact — every send goes to one confirmed recipient at a time, never in bulk.
@@ -119,3 +120,18 @@ node --test agent/test-agent-unit.mjs
 ## License
 
 [MIT](./LICENSE) © Isaiah Dupree
+
+## Verified read coverage and live tests
+
+Agent 1.1 reads the live SQLite WAL, decodes Apple attributed strings using macOS Foundation, and provides bounded cursor pagination. Cursors follow database insertion order. Attachment-only records remain visible through `has_attachments`; attachment files are not uploaded or decoded. The Mac database is the coverage boundary: this does not establish that every iPhone/iCloud message has synced.
+
+```sh
+apple-messages-agent doctor
+node test/live-messages.mjs
+# After pairing your own account and starting the agent:
+MB_EMAIL=your-email MB_PASSWORD=your-password node test/live-relay.mjs
+```
+
+Provide credentials through your secure environment, not a shared transcript or committed file. The live tests only read and print aggregate results. `live-messages` checks every local conversation page, all messages in the largest thread, decoded search, and cursor validation. `live-relay` validates actual OAuth, MCP and paired-Mac reads; it fails if the Mac is offline. Reviewer/demo output is never accepted as evidence of a live integration.
+
+Production requires the storage migration and valid Supabase configuration. `/api/health` returns HTTP 503 when storage is unavailable. If the old relay database is unavailable, accounts, pairing and OAuth sessions from it cannot be recovered automatically; sign in/create an owner account and reconnect the plugin.

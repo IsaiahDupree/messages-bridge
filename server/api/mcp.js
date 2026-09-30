@@ -27,7 +27,9 @@ export default async function handler(req, res) {
     });
   }
 
-  const demo = !!(await redis.get(`demo:${payload.sub}`));
+  let demo;
+  try { demo = !!(await redis.get(`demo:${payload.sub}`)); }
+  catch { return res.status(503).json({jsonrpc:'2.0',id:req.body?.id ?? null,error:{code:-32603,message:'MessagesBridge storage unavailable. Check /api/health and apply the storage migration.'}}); }
   const server = buildServer(payload.sub, { demo });
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on('close', () => {

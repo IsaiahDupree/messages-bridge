@@ -22,3 +22,5 @@ kit/screenshots/*.png
 
 # agent runtime config (lives in the user's home, never in the repo)
 .notesbridge-agent.json
+
+.messagesbridge-agent.json
