@@ -19,12 +19,12 @@
 - Real Supabase integration: KV roundtrip, FIFO queue, expiry, counter operations passed; unique test keys cleaned up.
 - Public production health: storage configured, storage responding, JWT configured, HTTP 200.
 - Owner completed signup and ChatGPT OAuth reconnect through Safari. Restored the missing public OAuth client registration using the exact client ID and ChatGPT callback observed in that reconnect, then completed normal owner consent.
-- A real installed ChatGPT connector list_recent_threads call authenticated and reached the background agent. It returned the explicit macOS Full Disk Access error; message retrieval through launchd is not yet verified.
+- A real installed ChatGPT connector list_recent_threads call authenticated and reached the background agent. It returned the explicit macOS Full Disk Access error; that initial call preceded the permission grant.
+- After owner permission changes, the first call passed database access but timed out decoding attributed text. Restarting the LaunchAgent cleared the error. Real installed ChatGPT connector verification then passed: list_recent_threads returned 2 conversations; get_thread returned 5 messages with zero decoding errors; search_messages returned 5 matches from 88 scanned messages with zero decoding errors. This exercised ChatGPT authentication -> production relay -> paired launchd agent -> local Messages database and native decoding. No message bodies are recorded in this report.
 
 ## Outstanding
 
 - The only saved repository login is a reviewer/demo account. It was not paired to real messages.
-- Full Disk Access is required for the launchd executable `/opt/homebrew/Cellar/node/26.7.0/bin/node`. System Settings is at the administrator authentication prompt; owner confirmation and unlock are pending. Local reads inherited the interactive host permission and do not prove background-agent access.
-- After permission is granted, restart the agent and verify real installed-connector list -> thread -> search reads. `test/live-relay.mjs` has not passed. Do not count local tests, pairing, OAuth, or health as a successful end-to-end message read.
+- The standalone password-based `test/live-relay.mjs` was not run successfully; the installed ChatGPT connector was used for the real authenticated end-to-end verification instead.
 - Contacts read timed out on this Mac; its permissions/runtime remain unverified. Sending and contact creation were not exercised, and no messages were sent.
 - This only covers data stored on the Mac; complete iPhone/iCloud history and attachment contents are not established.
