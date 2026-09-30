@@ -50,7 +50,7 @@ export function buildServer(userId, { demo = false } = {}) {
     'list_recent_threads',
     {
       title: 'List recent conversations',
-      description: "List the user's most recent Messages conversations (people and group chats), newest first, each with a preview of the last message. Pass next_cursor as cursor for older conversations.",
+      description: "List the user's most recent Messages conversations (people and group chats), newest first, each with a preview of the last message. Pass next_cursor as cursor for older conversations. Each returned id is the exact get_thread thread argument. If the user selects a numbered list item, map that position to its id from that same result; never send the position as the thread identifier.",
       inputSchema: { limit: z.number().int().min(1).max(100).optional(), cursor: z.string().regex(/^[1-9][0-9]*$/).optional() },
       annotations: RO,
     },
@@ -61,7 +61,7 @@ export function buildServer(userId, { demo = false } = {}) {
     'get_thread',
     {
       title: 'Read a conversation',
-      description: 'Read one page of messages in a conversation, oldest database record first within the page. Pass next_cursor as cursor to read older history until null. Includes attributed text and attachment indicators, not attachment contents. Identify the thread by a phone number, email, or chat identifier (from search or list results).',
+      description: 'Read one page of messages in a conversation, oldest database record first within the page. Pass next_cursor as cursor to read older history until null. Includes attributed text and attachment indicators, not attachment contents. Prefer the exact id from list_recent_threads or thread_guid from search_messages. A displayed list number is not a thread ID. For each new request call this tool again, and verify resolved_thread_id matches the requested conversation; do not reuse an earlier conversation response. Omit cursor to read the latest page again; use next_cursor only to continue older history.',
       inputSchema: { thread: z.string(), limit: z.number().int().min(1).max(200).optional(), cursor: z.string().regex(/^[1-9][0-9]*$/).optional() },
       annotations: RO,
     },

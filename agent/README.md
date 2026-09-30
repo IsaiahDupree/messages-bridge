@@ -8,13 +8,13 @@ you make.
 
 - Pair with your own MessagesBridge account; requested results travel through the relay to ChatGPT.
 - One command to pair, one command to keep it running forever.
-- No dependencies — just Node 18+.
+- Node 18+ and Apple Command Line Tools (for the small native text decoder).
 
 ---
 
 ## Quick start
 
-You need [Node.js 18 or newer](https://nodejs.org). Then:
+You need [Node.js 18 or newer](https://nodejs.org) and Apple Command Line Tools. The first read compiles a small Foundation decoder into `~/.messagesbridge/native`; message contents are not written there. Then:
 
 ```sh
 # 1. On the MessagesBridge site, click "Connect my Mac" to get a pairing code.

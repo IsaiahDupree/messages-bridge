@@ -24,7 +24,7 @@ Your Mac is the only place your messages are ever read or contacts written. The 
 
 **1. Create your account** at **[messagesbridge.vercel.app](https://messagesbridge.vercel.app)** and generate a pairing code.
 
-**2. Install the Mac agent** (needs [Node 18+](https://nodejs.org)):
+**2. Install the Mac agent** (needs [Node 18+](https://nodejs.org) and Apple Command Line Tools):
 
 ```bash
 npx apple-messages-agent pair <YOUR-CODE>   # link this Mac to your account

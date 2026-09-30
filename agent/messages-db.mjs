@@ -3,7 +3,10 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { readFile, mkdir, access, rename, unlink } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 const exec = promisify(execFile);
 const db = join(homedir(), 'Library', 'Messages', 'chat.db');
 const quote = value => `'${String(value).replaceAll("'", "''")}'`;
@@ -26,23 +29,29 @@ async function sql(query) {
     throw new Error(e.killed ? 'Messages database read timed out' : 'Messages database query failed: '+String(e.stderr || e.message).slice(0,250));
   }
 }
-const DECODE = `ObjC.import('Foundation');
-function run(){
- var input=$.NSFileHandle.fileHandleWithStandardInput.readDataToEndOfFile;
- var rows=JSON.parse(ObjC.unwrap($.NSString.alloc.initWithDataEncoding(input,$.NSUTF8StringEncoding)));
- return JSON.stringify(rows.map(function(r){
-  if(r.text==null && r.body){
-   try {var d=$.NSData.alloc.initWithBase64EncodedStringOptions(r.body,0); r.text=ObjC.unwrap($.NSUnarchiver.unarchiveObjectWithData(d).string); r.text_source='attributedBody';}
-   catch(e){r.text=null;r.decode_error=true;}
-  }else{r.text_source=r.text==null?'none':'text';}
-  delete r.body;return r;
- }));
-}`;
+let decoderPromise;
+async function decoderPath() {
+  if (!decoderPromise) decoderPromise = (async()=>{
+    const source=join(dirname(fileURLToPath(import.meta.url)), 'decode-attributed.m');
+    const hash=createHash('sha256').update(await readFile(source)).update(process.arch).digest('hex').slice(0,20);
+    const dir=join(homedir(),'.messagesbridge','native');
+    await mkdir(dir,{recursive:true,mode:0o700});
+    const binary=join(dir,`decode-${hash}`);
+    try {await access(binary);return binary;} catch {}
+    const temporary=`${binary}.${process.pid}.tmp`;
+    try {
+      await exec('/usr/bin/clang',['-O2','-fobjc-arc','-framework','Foundation',source,'-o',temporary],{timeout:20000,maxBuffer:1024*1024});
+      await rename(temporary,binary);return binary;
+    } catch {await unlink(temporary).catch(()=>{});throw new Error('Native Messages decoder could not compile; install Apple Command Line Tools');}
+  })().catch(e=>{decoderPromise=undefined;throw e;});
+  return decoderPromise;
+}
 async function decode(rows) {
   if (!rows.length) return rows;
   const input = rows.map(r=>({...r,body:r.body ? Buffer.from(r.body,'hex').toString('base64') : null}));
+  const binary=await decoderPath();
   const stdout = await new Promise((resolve,reject)=>{
-    const child=execFile('/usr/bin/osascript',['-l','JavaScript','-e',DECODE],{timeout:15000,maxBuffer:16*1024*1024},(err,out)=>err?reject(new Error('Apple attributed-text decoding failed')):resolve(out));
+    const child=execFile(binary,[],{timeout:15000,maxBuffer:16*1024*1024},(err,out)=>err?reject(new Error(err.killed || err.signal ? 'Apple attributed-text decoding timed out; retry this read with the same thread ID and cursor' : 'Apple attributed-text decoding failed')):resolve(out));
     child.stdin.on('error',()=>{}); child.stdin.end(JSON.stringify(input));
   });
   return JSON.parse(stdout);
@@ -75,13 +84,13 @@ export async function readMessages(tool,args={}) {
  }
  if(tool==='get_thread') {
   const thread=String(args.thread || '').trim(); if(!thread) throw new Error('thread is required');
-  let chats=await sql(`SELECT ROWID AS id FROM chat WHERE chat_identifier=${quote(thread)} OR guid=${quote(thread)}`);
-  if(!chats.length) chats=await sql(`SELECT c.ROWID AS id FROM chat c JOIN chat_handle_join j ON j.chat_id=c.ROWID JOIN handle h ON h.ROWID=j.handle_id WHERE h.id=${quote(thread)} AND (SELECT count(*) FROM chat_handle_join x WHERE x.chat_id=c.ROWID)=1`);
+  let chats=await sql(`SELECT ROWID AS id,guid,chat_identifier FROM chat WHERE chat_identifier=${quote(thread)} OR guid=${quote(thread)}`);
+  if(!chats.length) chats=await sql(`SELECT c.ROWID AS id,c.guid,c.chat_identifier FROM chat c JOIN chat_handle_join j ON j.chat_id=c.ROWID JOIN handle h ON h.ROWID=j.handle_id WHERE h.id=${quote(thread)} AND (SELECT count(*) FROM chat_handle_join x WHERE x.chat_id=c.ROWID)=1`);
   if(chats.length!==1) throw new Error(chats.length?'Multiple conversations match; use an exact thread id from list_recent_threads':'No conversation found');
   const limit=limitFor(args.limit,30,200);
   const rows=await decode(await sql(`SELECT ${select} ${joins} WHERE c.ROWID=${chats[0].id} AND m.ROWID<${before} ORDER BY m.ROWID DESC LIMIT ${limit+1}`));
   const page=rows.slice(0,limit);
-  return {thread,messages:page.map(out).reverse(),next_cursor:rows.length>limit?String(page.at(-1).id):null,...scope};
+  return {thread,resolved_thread_id:chats[0].guid || chats[0].chat_identifier,messages:page.map(out).reverse(),next_cursor:rows.length>limit?String(page.at(-1).id):null,...scope};
  }
  if(tool==='search_messages') {
   const query=String(args.query || '').trim().toLowerCase(); if(!query) throw new Error('query must not be empty');
