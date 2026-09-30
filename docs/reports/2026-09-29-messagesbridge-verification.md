@@ -2,7 +2,7 @@
 
 ## Delivered
 
-- Agent 1.1.0 installed globally from this repository. Pairing and launchd startup remain pending an owner pairing code.
+- Agent 1.1.0 installed globally from this repository, paired to the owner account, and installed as the com.messagesbridge.apple-messages-agent LaunchAgent. The owner dashboard reports Mac connected.
 - Relay 1.4.0 deployed to https://messagesbridge.vercel.app.
 - Production storage moved from the unreachable `gqjgxltroyysjoxswbmn` project to the required shared `ivhfuhxorppptyuofbgq` project. No old account data was recovered or silently substituted.
 - Applied isolated `actp_messagesbridge_*` tables and service-role-only `mb_*` RPCs. Verified anon/authenticated cannot execute those RPCs.
@@ -18,12 +18,13 @@
 - Real read-only Mac integration: 3,158 messages available locally, 204 conversations enumerated without duplicate pages, all 503 messages in the largest conversation read across pages, all 503 attributed strings decoded without errors, decoded-text keyword search passed, invalid cursor/input rejection passed.
 - Real Supabase integration: KV roundtrip, FIFO queue, expiry, counter operations passed; unique test keys cleaned up.
 - Public production health: storage configured, storage responding, JWT configured, HTTP 200.
-- Installed connector call now returns reauthentication required, rather than the original internal error.
+- Owner completed signup and ChatGPT OAuth reconnect through Safari. Restored the missing public OAuth client registration using the exact client ID and ChatGPT callback observed in that reconnect, then completed normal owner consent.
+- A real installed ChatGPT connector list_recent_threads call authenticated and reached the background agent. It returned the explicit macOS Full Disk Access error; message retrieval through launchd is not yet verified.
 
 ## Outstanding
 
 - The only saved repository login is a reviewer/demo account. It was not paired to real messages.
-- Owner must sign in/create an owner account, provide its pairing code, and reconnect MessagesBridge. The old project's account/OAuth state is unavailable.
-- `test/live-relay.mjs` is ready to verify normal OAuth -> MCP -> paired agent -> real Messages, but cannot pass before owner pairing. Do not count local tests or health as this end-to-end result.
+- Full Disk Access is required for the launchd executable `/opt/homebrew/Cellar/node/26.7.0/bin/node`. System Settings is at the administrator authentication prompt; owner confirmation and unlock are pending. Local reads inherited the interactive host permission and do not prove background-agent access.
+- After permission is granted, restart the agent and verify real installed-connector list -> thread -> search reads. `test/live-relay.mjs` has not passed. Do not count local tests, pairing, OAuth, or health as a successful end-to-end message read.
 - Contacts read timed out on this Mac; its permissions/runtime remain unverified. Sending and contact creation were not exercised, and no messages were sent.
 - This only covers data stored on the Mac; complete iPhone/iCloud history and attachment contents are not established.
