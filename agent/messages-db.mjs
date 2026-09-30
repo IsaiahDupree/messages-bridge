@@ -19,7 +19,7 @@ function boundary(cursor) {
 }
 async function sql(query) {
   try {
-    const {stdout} = await exec('/usr/bin/sqlite3', ['-readonly','-json',db,query], {timeout:15000,maxBuffer:16*1024*1024});
+    const {stdout} = await exec('/usr/bin/sqlite3', ['-readonly','-cmd','.timeout 5000','-json',db,query], {timeout:15000,maxBuffer:16*1024*1024});
     return JSON.parse(stdout || '[]');
   } catch(e) {
     if (/unable to open|authorization denied|not authorized|operation not permitted/i.test(e.stderr || e.message)) throw new Error('Cannot read Messages. Grant Full Disk Access to the agent in System Settings > Privacy & Security > Full Disk Access.');
